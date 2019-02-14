@@ -2,10 +2,12 @@
 
 namespace Symbiote\SilverstripePHPStan\Reflection;
 
+use PHPStan\Reflection\ClassMemberReflection;
 use PHPStan\Reflection\ClassReflection;
+use PHPStan\Reflection\FunctionVariant;
 use PHPStan\Reflection\MethodReflection;
-use PHPStan\Type\Type;
 use PHPStan\Type\ObjectType;
+use PHPStan\Type\Type;
 
 class ComponentHasOneMethod implements MethodReflection
 {
@@ -43,7 +45,7 @@ class ComponentHasOneMethod implements MethodReflection
         return $this->declaringClass;
     }
 
-    public function getPrototype(): MethodReflection
+    public function getPrototype(): ClassMemberReflection
     {
         return $this;
     }
@@ -81,5 +83,19 @@ class ComponentHasOneMethod implements MethodReflection
     public function getReturnType(): Type
     {
         return $this->returnType;
+    }
+
+    /**
+     * @return \PHPStan\Reflection\ParametersAcceptor[]
+     */
+    public function getVariants(): array
+    {
+        return [
+            new FunctionVariant(
+                $this->parameters,
+                $this->isVariadic,
+                $this->returnType
+            )
+        ];
     }
 }

@@ -2,13 +2,14 @@
 
 namespace Symbiote\SilverstripePHPStan\Type;
 
-use Symbiote\SilverstripePHPStan\ClassHelper;
-use Symbiote\SilverstripePHPStan\Utility;
-use PHPStan\Type\Type;
-use PHPStan\Type\DynamicFunctionReturnTypeExtension;
 use PhpParser\Node\Expr\FuncCall;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\FunctionReflection;
+use PHPStan\Reflection\ParametersAcceptorSelector;
+use PHPStan\Type\DynamicFunctionReturnTypeExtension;
+use PHPStan\Type\Type;
+use Symbiote\SilverstripePHPStan\ClassHelper;
+use Symbiote\SilverstripePHPStan\Utility;
 
 class SingletonReturnTypeExtension implements DynamicFunctionReturnTypeExtension
 {
@@ -25,14 +26,15 @@ class SingletonReturnTypeExtension implements DynamicFunctionReturnTypeExtension
     public function getTypeFromFunctionCall(FunctionReflection $functionReflection, FuncCall $functionCall, Scope $scope): Type
     {
         $name = $functionReflection->getName();
+        $parametersAcceptor = ParametersAcceptorSelector::selectFromArgs($scope, $functionCall->args, $functionReflection->getVariants());
         switch ($name) {
             case 'singleton':
                 if (count($functionCall->args) === 0) {
-                    return $functionReflection->getReturnType();
+                    return $parametersAcceptor->getReturnType();
                 }
                 // Handle singleton('HTMLText')
                 $arg = $functionCall->args[0]->value;
-                $type = Utility::getTypeFromInjectorVariable($arg, $functionReflection->getReturnType());
+                $type = Utility::getTypeFromInjectorVariable($arg, $parametersAcceptor->getReturnType());
                 return $type;
             break;
         }

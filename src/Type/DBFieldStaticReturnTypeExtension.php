@@ -9,6 +9,7 @@ use PHPStan\Reflection\MethodReflection;
 use PHPStan\Analyser\Scope;
 use PHPStan\Type\Type;
 use PHPStan\Type\ObjectType;
+use PHPStan\Reflection\ParametersAcceptorSelector;
 
 class DBFieldStaticReturnTypeExtension implements \PHPStan\Type\DynamicStaticMethodReturnTypeExtension
 {
@@ -26,6 +27,7 @@ class DBFieldStaticReturnTypeExtension implements \PHPStan\Type\DynamicStaticMet
     public function getTypeFromStaticMethodCall(MethodReflection $methodReflection, StaticCall $methodCall, Scope $scope): Type
     {
         $name = $methodReflection->getName();
+        $parametersAcceptor = ParametersAcceptorSelector::selectFromArgs($scope, $methodCall->args, $methodReflection->getVariants());
         switch ($name) {
             case 'create_field':
                 if (count($methodCall->args) === 0) {
@@ -33,7 +35,7 @@ class DBFieldStaticReturnTypeExtension implements \PHPStan\Type\DynamicStaticMet
                 }
                 // Handle DBField::create_field('HTMLText', '<p>Value</p>')
                 $arg = $methodCall->args[0]->value;
-                $type = Utility::getTypeFromVariable($arg, $methodReflection);
+                $type = Utility::getTypeFromVariable($arg, $parametersAcceptor);
                 return $type;
             break;
         }

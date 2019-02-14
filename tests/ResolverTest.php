@@ -2,16 +2,21 @@
 
 namespace Symbiote\SilverstripePHPStan\Tests;
 
-use ReflectionProperty;
-use PHPStan\PhpDoc;
+use PHPStan\Analyser\NodeScopeResolver;
 use PHPStan\Analyser\Scope;
+use PHPStan\Analyser\ScopeContext;
+use PHPStan\Analyser\TypeSpecifier;
+use PHPStan\Broker\AnonymousClassNameHelper;
 use PHPStan\Cache\Cache;
 use PHPStan\File\FileHelper;
+use PHPStan\File\RelativePathHelper;
+use PHPStan\PhpDoc;
 use PHPStan\PhpDoc\PhpDocStringResolver;
-use PHPStan\Type\FileTypeMapper;
-use PHPStan\Analyser\NodeScopeResolver;
-use PHPStan\Analyser\TypeSpecifier;
+use PHPStan\PhpDoc\TypeNodeResolver;
 use PHPStan\Reflection\BrokerAwareExtension;
+use PHPStan\Type\FileTypeMapper;
+use PHPStan\Type\VerbosityLevel;
+use ReflectionProperty;
 
 abstract class ResolverTest extends \PHPStan\Testing\TestCase
 {
@@ -48,10 +53,10 @@ abstract class ResolverTest extends \PHPStan\Testing\TestCase
             if ($printedNode === $evaluatedPointExpression) {
                 /** @var \PhpParser\Node\Expr $expressionNode */
                 $expressionNode = $this->getParser()->parseString(sprintf('<?php %s;', $expression))[0];
-                $type = $scope->getType($expressionNode);
+                $type = $scope->getType($expressionNode->expr);
                 $this->assertTypeDescribe(
                     $description,
-                    $type->describe(),
+                    $type->describe(VerbosityLevel::precise()),
                     sprintf('%s at %s', $expression, $evaluatedPointExpression)
                 );
             }
@@ -63,7 +68,8 @@ abstract class ResolverTest extends \PHPStan\Testing\TestCase
         \Closure $callback,
         array $dynamicMethodReturnTypeExtensions = [],
         array $dynamicStaticMethodReturnTypeExtensions = [],
-        array $dynamicFunctionReturnTypeExtensions = []
+        array $dynamicFunctionReturnTypeExtensions = [],
+        array $dynamicConstantNames = []
     ) {
         // NOTE(Jake): 2018-04-21
         //
@@ -92,12 +98,23 @@ abstract class ResolverTest extends \PHPStan\Testing\TestCase
             $refProperty->setValue($broker, $hack);
         }
 
+        $currentWorkingDirectory = $this->getCurrentWorkingDirectory();
+        $anonymousClassNameHelper = new AnonymousClassNameHelper(new FileHelper($currentWorkingDirectory), new RelativePathHelper($currentWorkingDirectory, DIRECTORY_SEPARATOR, []));
+        $typeNodeResolver = self::getContainer()->getByType(TypeNodeResolver::class);
+        $typeSpecifier = $this->createTypeSpecifier($printer, $broker);
+
         $resolver = new NodeScopeResolver(
             $broker,
             $this->getParser(),
-            $printer,
-            new FileTypeMapper($this->getParser(), $phpDocStringResolver, $this->createMock(Cache::class)),
+            new FileTypeMapper(
+                $this->getParser(),
+                $phpDocStringResolver,
+                $this->createMock(Cache::class),
+                $anonymousClassNameHelper,
+                $typeNodeResolver
+            ),
             new FileHelper('/'),
+            $typeSpecifier,
             true,
             true,
             [
@@ -131,12 +148,7 @@ abstract class ResolverTest extends \PHPStan\Testing\TestCase
 
         $resolver->processNodes(
             $this->getParser()->parseFile($file),
-            new Scope(
-                $broker,
-                $printer,
-                new TypeSpecifier($printer),
-                $file
-            ),
+            $this->createScopeFactory($broker, $typeSpecifier, $dynamicConstantNames)->create(ScopeContext::create($file)),
             $callback
         );
     }

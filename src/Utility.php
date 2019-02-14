@@ -18,7 +18,7 @@ use PHPStan\Type\IntegerType;
 use PHPStan\Type\FloatType;
 use PHPStan\Type\MixedType;
 use PHPStan\Reflection\MethodReflection;
-use PHPStan\Reflection\ParametersAcceptorWithPhpDocs;
+use PHPStan\Reflection\ParametersAcceptor;
 
 class Utility
 {
@@ -93,7 +93,7 @@ class Utility
         return new ObjectType($classNameOrLabel);
     }
 
-    public static function getTypeFromVariable(NodeAbstract $node, ParametersAcceptorWithPhpDocs $methodOrFunctionReflection): Type
+    public static function getTypeFromVariable(NodeAbstract $node, ParametersAcceptor $methodOrFunctionReflection): Type
     {
         $class = '';
         if ($node instanceof Arg) {

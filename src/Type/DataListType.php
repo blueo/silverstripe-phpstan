@@ -2,25 +2,24 @@
 
 namespace Symbiote\SilverstripePHPStan\Type;
 
-use PHPStan\Analyser\Scope;
+use PHPStan\TrinaryLogic;
+use PHPStan\Reflection\ClassMemberAccessAnswerer;
 use PHPStan\Reflection\MethodReflection;
 use PHPStan\Reflection\PropertyReflection;
 use PHPStan\Type\Type;
 use PHPStan\Type\ObjectType;
-use PHPStan\Type\IterableTypeTrait;
 use PHPStan\Type\StaticResolvableType;
+use PHPStan\Type\VerbosityLevel;
 
 class DataListType extends ObjectType implements StaticResolvableType
 {
-    use IterableTypeTrait;
-
     public function __construct(string $dataListClassName, Type $itemType)
     {
         parent::__construct($dataListClassName);
         $this->itemType = $itemType;
     }
 
-    public function describe(): string
+    public function describe(VerbosityLevel $level): string
     {
         $dataListTypeClass = count($this->getReferencedClasses()) === 1 ? $this->getReferencedClasses()[0] : '';
         $itemTypeClass = count($this->itemType->getReferencedClasses()) === 1 ? $this->itemType->getReferencedClasses()[0] : '';
@@ -54,7 +53,7 @@ class DataListType extends ObjectType implements StaticResolvableType
 
     // IterableTrait
 
-    public function canCallMethods(): bool
+    public function canCallMethods(): TrinaryLogic
     {
         return true;
     }
@@ -64,7 +63,7 @@ class DataListType extends ObjectType implements StaticResolvableType
         return parent::hasMethod($methodName);
     }
 
-    public function getMethod(string $methodName, Scope $scope): MethodReflection
+    public function getMethod(string $methodName, ClassMemberAccessAnswerer $scope): MethodReflection
     {
         return parent::getMethod($methodName, $scope);
     }
@@ -74,7 +73,7 @@ class DataListType extends ObjectType implements StaticResolvableType
         return true;
     }
 
-    public function canAccessProperties(): bool
+    public function canAccessProperties(): TrinaryLogic
     {
         return parent::canAccessProperties();
     }
@@ -84,7 +83,7 @@ class DataListType extends ObjectType implements StaticResolvableType
         return parent::hasProperty($propertyName);
     }
 
-    public function getProperty(string $propertyName, Scope $scope): PropertyReflection
+    public function getProperty(string $propertyName, ClassMemberAccessAnswerer $scope): PropertyReflection
     {
         return parent::getProperty($propertyName, $scope);
     }

@@ -3,13 +3,14 @@
 namespace Symbiote\SilverstripePHPStan\Type;
 
 use Exception;
+use PhpParser\Node\Expr\MethodCall;
+use PHPStan\Analyser\Scope;
+use PHPStan\Reflection\MethodReflection;
+use PHPStan\Reflection\ParametersAcceptorSelector;
+use PHPStan\Type\DynamicMethodReturnTypeExtension;
+use PHPStan\Type\Type;
 use Symbiote\SilverstripePHPStan\ClassHelper;
 use Symbiote\SilverstripePHPStan\Utility;
-use PHPStan\Type\DynamicMethodReturnTypeExtension;
-use PhpParser\Node\Expr\MethodCall;
-use PHPStan\Reflection\MethodReflection;
-use PHPStan\Analyser\Scope;
-use PHPStan\Type\Type;
 
 class InjectorReturnTypeExtension implements DynamicMethodReturnTypeExtension
 {
@@ -31,13 +32,14 @@ class InjectorReturnTypeExtension implements DynamicMethodReturnTypeExtension
     public function getTypeFromMethodCall(MethodReflection $methodReflection, MethodCall $methodCall, Scope $scope): Type
     {
         $name = $methodReflection->getName();
+        $parametersAcceptor = ParametersAcceptorSelector::selectFromArgs($scope, $methodCall->args, $methodReflection->getVariants());
         switch ($name) {
             case 'get':
                 if (count($methodCall->args) === 0) {
                     return $methodReflection->getReturnType();
                 }
                 $arg = $methodCall->args[0]->value;
-                $type = Utility::getTypeFromInjectorVariable($arg, $methodReflection->getReturnType());
+                $type = Utility::getTypeFromInjectorVariable($arg, $parametersAcceptor->getReturnType());
                 return $type;
             break;
 
