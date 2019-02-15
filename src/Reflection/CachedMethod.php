@@ -6,6 +6,7 @@ use PHPStan\Reflection\ClassReflection;
 use PHPStan\Reflection\MethodReflection;
 use PHPStan\Type\Type;
 use PHPStan\Type\MixedType;
+use PHPStan\Reflection\FunctionVariant;
 use PHPStan\Reflection\Php\PhpMethodReflection;
 
 class CachedMethod implements MethodReflection
@@ -81,5 +82,19 @@ class CachedMethod implements MethodReflection
     public function getReturnType(): Type
     {
         return $this->methodReflection->getReturnType();
+    }
+
+    /**
+     * @return \PHPStan\Reflection\ParametersAcceptor[]
+     */
+    public function getVariants(): array
+    {
+        return [
+            new FunctionVariant(
+                $this->getParameters(),
+                $this->isVariadic(),
+                $this->getReturnType()
+            )
+        ];
     }
 }

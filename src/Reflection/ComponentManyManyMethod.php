@@ -94,9 +94,9 @@ class ComponentManyManyMethod implements MethodReflection
     {
         return [
             new FunctionVariant(
-                $this->parameters,
-                $this->isVariadic,
-                $this->returnType
+                $this->getParameters(),
+                $this->isVariadic(),
+                $this->getReturnType()
             )
         ];
     }
