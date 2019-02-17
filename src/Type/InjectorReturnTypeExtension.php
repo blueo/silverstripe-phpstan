@@ -36,7 +36,7 @@ class InjectorReturnTypeExtension implements DynamicMethodReturnTypeExtension
         switch ($name) {
             case 'get':
                 if (count($methodCall->args) === 0) {
-                    return $methodReflection->getReturnType();
+                    return $parametersAcceptor->getReturnType();
                 }
                 $arg = $methodCall->args[0]->value;
                 $type = Utility::getTypeFromInjectorVariable($arg, $parametersAcceptor->getReturnType());
@@ -47,6 +47,6 @@ class InjectorReturnTypeExtension implements DynamicMethodReturnTypeExtension
                 throw new Exception('Unhandled method call: '.$name);
             break;
         }
-        return $methodReflection->getReturnType();
+        return $parametersAcceptor->getReturnType();
     }
 }

@@ -15,6 +15,7 @@ use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PHPStan\Reflection\ClassReflection;
 use PHPStan\Reflection\MethodReflection;
+use PHPStan\Reflection\ParametersAcceptorSelector;
 use PHPStan\Analyser\Scope;
 use PHPStan\Type\Type;
 use PHPStan\Type\ArrayType;
@@ -51,7 +52,7 @@ class DataObjectReturnTypeExtension implements DynamicMethodReturnTypeExtension
     public function getTypeFromMethodCall(MethodReflection $methodReflection, MethodCall $methodCall, Scope $scope): Type
     {
         $type = $scope->getType($methodCall->var);
-
+        $parametersAcceptor = ParametersAcceptorSelector::selectFromArgs($scope, $methodCall->args, $methodReflection->getVariants());
         $name = $methodReflection->getName();
         switch ($name) {
             case 'getCMSFields':
@@ -68,7 +69,7 @@ class DataObjectReturnTypeExtension implements DynamicMethodReturnTypeExtension
                 // directly from another function like `$this->getCMSFields()`, this will
                 // execute.
                 //
-                $objectType = $methodReflection->getReturnType();
+                $objectType = $parametersAcceptor->getReturnType();
                 if (!($objectType instanceof ObjectType)) {
                     throw new Exception('Unexpected type: '.get_class($objectType).', expected ObjectType');
                 }
@@ -90,14 +91,14 @@ class DataObjectReturnTypeExtension implements DynamicMethodReturnTypeExtension
                     //return $methodReflection->getReturnType();
                 }
                 if (count($methodCall->args) === 0) {
-                    return $methodReflection->getReturnType();
+                    return $parametersAcceptor->getReturnType();
                 }
                 // Handle $this->dbObject('Field')
                 $arg = $methodCall->args[0]->value;
                 $fieldName = '';
                 if ($arg instanceof Variable) {
                     // Unhandled, cannot retrieve variable value even if set in this scope.
-                    return $methodReflection->getReturnType();
+                    return $parametersAcceptor->getReturnType();
                 } else if ($arg instanceof ClassConstFetch) {
                     // Handle "SiteTree::class" constant
                     $fieldName = (string)$arg->class;
@@ -110,21 +111,21 @@ class DataObjectReturnTypeExtension implements DynamicMethodReturnTypeExtension
                 }
                 $dbFields = ConfigHelper::get_db($className);
                 if (!isset($dbFields[$fieldName])) {
-                    return $methodReflection->getReturnType();
+                    return $parametersAcceptor->getReturnType();
                 }
                 $dbFieldType = $dbFields[$fieldName];
                 if (!$dbFieldType) {
-                    return $methodReflection->getReturnType();
+                    return $parametersAcceptor->getReturnType();
                 }
                 return $dbFieldType;
             break;
 
             case 'newClassInstance':
                 if (count($methodCall->args) === 0) {
-                    return $methodReflection->getReturnType();
+                    return $parametersAcceptor->getReturnType();
                 }
                 $arg = $methodCall->args[0]->value;
-                $type = Utility::getTypeFromVariable($arg, $methodReflection);
+                $type = Utility::getTypeFromVariable($arg, $parametersAcceptor);
                 return $type;
             break;
 
@@ -132,6 +133,6 @@ class DataObjectReturnTypeExtension implements DynamicMethodReturnTypeExtension
                 throw new Exception('Unhandled method call: '.$name);
             break;
         }
-        return $methodReflection->getReturnType();
+        return $parametersAcceptor->getReturnType();
     }
 }

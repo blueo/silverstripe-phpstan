@@ -79,11 +79,6 @@ class CachedMethod implements MethodReflection
         return $this->name;
     }
 
-    public function getReturnType(): Type
-    {
-        return $this->methodReflection->getReturnType();
-    }
-
     /**
      * @return \PHPStan\Reflection\ParametersAcceptor[]
      */

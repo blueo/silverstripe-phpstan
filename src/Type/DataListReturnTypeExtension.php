@@ -6,6 +6,7 @@ use Exception;
 use Symbiote\SilverstripePHPStan\ClassHelper;
 use PhpParser\Node\Expr\MethodCall;
 use PHPStan\Reflection\MethodReflection;
+use PHPStan\Reflection\ParametersAcceptorSelector;
 use PHPStan\Analyser\Scope;
 use PHPStan\Type\Type;
 use PHPStan\Type\ArrayType;
@@ -81,6 +82,7 @@ class DataListReturnTypeExtension implements \PHPStan\Type\DynamicMethodReturnTy
         // https://github.com/phpstan/phpstan/issues/350#issuecomment-339159006
         //
         $type = $scope->getType($methodCall->var);
+        $parametersAcceptor = ParametersAcceptorSelector::selectFromArgs($scope, $methodCall->args, $methodReflection->getVariants());
 
         switch ($name) {
             // DataList
@@ -117,7 +119,7 @@ class DataListReturnTypeExtension implements \PHPStan\Type\DynamicMethodReturnTy
                 if (method_exists($type, 'getItemType')) {
                     return new ArrayType(new IntegerType, $type->getItemType());
                 }
-                return $methodReflection->getReturnType();
+                return $parametersAcceptor->getReturnType();
             break;
 
             // DataObject
@@ -132,6 +134,6 @@ class DataListReturnTypeExtension implements \PHPStan\Type\DynamicMethodReturnTy
                 throw new Exception('Unhandled method call: '.$name);
             break;
         }
-        return $methodReflection->getReturnType();
+        return $parametersAcceptor->getReturnType();
     }
 }

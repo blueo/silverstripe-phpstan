@@ -31,7 +31,7 @@ class DBFieldStaticReturnTypeExtension implements \PHPStan\Type\DynamicStaticMet
         switch ($name) {
             case 'create_field':
                 if (count($methodCall->args) === 0) {
-                    return $methodReflection->getReturnType();
+                    return $parametersAcceptor->getReturnType();
                 }
                 // Handle DBField::create_field('HTMLText', '<p>Value</p>')
                 $arg = $methodCall->args[0]->value;
@@ -39,6 +39,6 @@ class DBFieldStaticReturnTypeExtension implements \PHPStan\Type\DynamicStaticMet
                 return $type;
             break;
         }
-        return $methodReflection->getReturnType();
+        return $parametersAcceptor->getReturnType();
     }
 }
